@@ -85,7 +85,7 @@ val mergesort = `(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y
 
 structure Don'tTryThisAtHomeKids = Unsafe
 val ! = fn (`m) => m
-val ? = Don'tTryThisAtHome.cast
+val ? = Don'tTryThisAtHomeKids.cast
 val ?! = fn x => ?(!x)
 val `? = fn x => `(?x)
 
