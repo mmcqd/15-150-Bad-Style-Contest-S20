@@ -90,8 +90,11 @@ val ?! = fn x => ?(!x)
 val `? = fn x => `(?x)
 
 (*
- * Here's the thing: the lambda terms we get from encoding integers and lists
+ * If you're already familiar with church encodings, then perhaps you've been
+ * bored up till now. Here's the real magic.
+ * Notice: the lambda terms we get from encoding integers and lists
  * have baaaaaaasically the same structure as the equivalent System F encodings.
+ * They just lack the relevant type.
  * Maybe if we ask the state of New Jersey really nicely, we can convince the
  * compiler to shove some types back in there...
  *)
