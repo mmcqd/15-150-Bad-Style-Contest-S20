@@ -9,26 +9,32 @@
  ****************)
 
 datatype M = ` of M -> M
-val ! = fn (`m) => m
-val $ = fn (f,x) => !f x
+(*val ! = fn (`m) => m*)
+val $ = fn (`f,x) => f x
 infix $
 val `+ = Fn.curry op+
-
-val Y = `(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y)))
-
-fun to_church_nat 0 = `(fn f => `(fn x => x))
-  | to_church_nat n = `(fn f => `(fn x => !f (!(!(to_church_nat (n-1)) f) x)))
-
-val % = to_church_nat
-
-val pred =
-  `(fn n => `(fn f => `(fn x =>
-    n $ `(fn g => `(fn h => h $ (g $ f))) $ `(fn u => x) $ `(fn u => u))))
 
 val id  = `(fn x => x)
 val tt  = `(fn x => `(fn y => x $ id))
 val ff  = `(fn x => `(fn y => y $ id))
 val &&  = `(fn a => `(fn b => a $ `(fn _ => b) $ `(fn _ => ff)))
+
+fun to_church_nat 0 = `(fn f => `(fn x => x))
+  | to_church_nat n = `(fn f => `(fn x => f $ ((to_church_nat (n-1) $ f $ x))))
+
+val % = to_church_nat
+
+val Pair = `(fn x => `(fn y => `(fn f => f $ x $ y)))
+val & = fn (x,y) => Pair $ x $ y
+infix &
+val fst = `(fn p => p $ `(fn x => `(fn _ => x)))
+val snd = `(fn p => p $ `(fn _ => `(fn x => x)))
+
+
+val zero = `(fn f => `(fn x => x))
+val succ = `(fn n => `(fn f => `(fn x => f $ (n $ f $ x))))
+val pred = `(fn n => fst $ (n $ `(fn p => (snd $ p) & (succ $ (snd $ p))) $ (zero & zero)))
+
 val isZ = `(fn n => n $ `(fn x => ff) $ tt)
 val ifZ = `(fn n => `(fn z => `(fn s => (isZ $ n) $ `(fn _ => z) $ `(fn _ => s $ (pred $ n)))))
 val add = `(fn n => `(fn m => `(fn f => `(fn x => (n $ f) $ (m $ f $ x)))))
@@ -47,13 +53,7 @@ infixr :::
 
 val to_church_list = foldr op::: Nil
 
-val Pair = `(fn x => `(fn y => `(fn f => f $ x $ y)))
-val & = fn (x,y) => Pair $ x $ y
-infix &
-val fst = `(fn p => p $ `(fn x => `(fn _ => x)))
-val snd = `(fn p => p $ `(fn _ => `(fn x => x)))
-
-val to_church_int = fn n => if n < 0 then (%0) & (%(~n)) else (%n) & (%0)
+val to_church_int = fn n => if n < 0 then (zero) & (%(~n)) else (%n) & (zero)
 val lte_int = `(fn n => `(fn m => lte $ (add $ (fst $ n) $ (snd $ m)) $ (add $ (fst $ m) $ (snd $ n))))
 
 
@@ -76,6 +76,7 @@ y))) $ `(fn mergesort => `(fn lt => `(fn xs => (ifNil $ xs) $ Nil $ `(fn x =>
  * information we erased... Or is there?
  *)
 
+val ! = fn (`m) => m
 val ? = Unsafe.cast
 val ?! = fn x => ?(!x)
 val `? = fn x => `(?x)
