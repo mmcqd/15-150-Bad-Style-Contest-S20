@@ -63,11 +63,7 @@ val lte_int = `(fn n => `(fn m => lte $ (add $ (fst $ n) $ (snd $ m)) $ (add $ (
  * imperative dynamics!
  *)
 
-val mergesort = `(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $
-y))) $ `(fn mergesort => `(fn lt => `(fn xs => (ifNil $ xs) $ Nil $ `(fn x =>
-`(fn xs' => (ifNil $ xs') $ (x:::Nil) $ `(fn y => `(fn ys => let val p = (`(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn split => `(fn xs => (ifNil $ xs) $ (Nil & Nil) $ `(fn y => `(fn ys => (ifNil $ ys) $ ((y:::Nil) & Nil) $ `(fn z => `(fn zs => let val p = split $ zs in (y:::(fst $ p)) & (z:::(snd $ p)) end))))))
-) $ xs in (`(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn merge => `(fn lt => `(fn xs => `(fn ys => (ifNil $ xs) $ ys $ `(fn x => `(fn xs' => (ifNil $ ys) $ xs $ `(fn y => `(fn ys' => (lt $ x $ y) $ `(fn _ => x:::(merge $ lt $ xs' $ ys)) $ `(fn _ => y:::(merge $ lt $ xs $ ys')) ))))))))
-) $ lt $ (mergesort $ lt $ (fst $ p)) $ (mergesort $ lt $ (snd $ p)) end )))))))
+val mergesort = `(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn mergesort => `(fn lt => `(fn xs => (ifNil $ xs) $ Nil $ `(fn x => `(fn xs' => (ifNil $ xs') $ (x:::Nil) $ `(fn y => `(fn ys => let val p = (`(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn split => `(fn xs => (ifNil $ xs) $ (Nil & Nil) $ `(fn y => `(fn ys => (ifNil $ ys) $ ((y:::Nil) & Nil) $ `(fn z => `(fn zs => let val p = split $ zs in (y:::(fst $ p)) & (z:::(snd $ p)) end))))))) $ xs in (`(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn merge => `(fn lt => `(fn xs => `(fn ys => (ifNil $ xs) $ ys $ `(fn x => `(fn xs' => (ifNil $ ys) $ xs $ `(fn y => `(fn ys' => (lt $ x $ y) $ `(fn _ => x:::(merge $ lt $ xs' $ ys)) $ `(fn _ => y:::(merge $ lt $ xs $ ys')) ))))))))) $ lt $ (mergesort $ lt $ (fst $ p)) $ (mergesort $ lt $ (snd $ p)) end )))))))
 
 
 (*
