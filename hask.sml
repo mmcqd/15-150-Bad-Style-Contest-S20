@@ -15,7 +15,7 @@ of                                   'a
 (*                      --Just a bit of boilerplate, feel free to ignore
 *)
 open Real
-val (a,List,Ord,Real,String,-->,==>,merge,split,mergesort,sort,show,$) = ((),Fn.id,Fn.id,(),(),fn _ => [],fn _ => [],(),(),(),(),toString,fn (f,x) => f x);fun `<$> (f,Nil) = Nil | `<$>(f,x:::xs) = f x ::: `<$>(f,xs);fun <$> (f,g) x = `<$>(f, g x);val rec fromList = fn [] => Nil | x::xs => x:::fromList xs;val rec toList = fn Nil => [] | x:::xs => x::toList xs;fun *** (f,g) (a,b) = (f a,g b);fun >>> (f,g) = g o f;infix 7 --> ==>;infixr $ `<$> <$> *** >>>
+val (a,List,Ord,Real,String,-->,==>,merge,split,mergesort,sort,show,$) = ((),Fn.id,Fn.id,(),(),fn _ => [],fn _ => [],(),(),(),(),toString,fn (f,x) => f x);fun `<$> (f,Nil) = Nil | `<$>(f,x:::xs) = f x ::: `<$>(f,xs);fun <$> (f,g) x = `<$>(f, g x);val rec fromList = fn [] => Nil | x::xs => x:::fromList xs;val rec toList = fn Nil => [] | x:::xs => x::toList xs;fun *** (f,g) (a,b) = (f a,g b);fun >>> (f,g) = g o f;infix 7 --> ==>;infixr $ <$> *** >>>
 
 
 val _ =                 split :: List a --> (List a,List a)
