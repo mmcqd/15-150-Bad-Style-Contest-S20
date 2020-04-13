@@ -17,52 +17,15 @@ infix $
 (* My identity function, please don't take it. Identity theft is not a joke *)
 val id  = `(fn x => x)
 
-(* Lazy booleans baybee *)
-val tt  = `(fn x => `(fn y => x $ id))
-val ff  = `(fn x => `(fn y => y $ id))
-val &&  = `(fn a => `(fn b => a $ `(fn _ => b) $ `(fn _ => ff)))
-
 
 fun to_church_nat 0 = `(fn f => `(fn x => x))
   | to_church_nat n = `(fn f => `(fn x => f $ ((to_church_nat (n-1) $ f $ x))))
 
 val % = to_church_nat
 
-val zero = `(fn f => `(fn x => x))
-val succ = `(fn n => `(fn f => `(fn x => f $ (n $ f $ x))))
+val to_church_list = foldr (fn (a,b) => (`(fn x => `(fn xs => `(fn g => `(fn z => g $ x $ (xs $ g $ z)))))) $ a $ b) (`(fn g => `(fn z => z)))
 
-(* Who needs product types? *)
-val Pair = `(fn x => `(fn y => `(fn f => f $ x $ y)))
-
-(* SML functions are actually just macros now *)
-val & = fn (x,y) => Pair $ x $ y
-infix &
-val fst = `(fn p => p $ `(fn x => `(fn _ => x)))
-val snd = `(fn p => p $ `(fn _ => `(fn x => x)))
-
-val pred = `(fn n => fst $ (n $ `(fn p => (snd $ p) & (succ $ (snd $ p))) $ (zero & zero)))
-val isZ = `(fn n => n $ `(fn x => ff) $ tt)
-val ifZ = `(fn n => `(fn z => `(fn s => (isZ $ n) $ `(fn _ => z) $ `(fn _ => s $ (pred $ n)))))
-val add = `(fn n => `(fn m => `(fn f => `(fn x => (n $ f) $ (m $ f $ x)))))
-val sub = `(fn n => `(fn m => (m $ pred) $ n))
-val lte = `(fn n => `(fn m => isZ $ (sub $ n $ m)))
-
-(* Lists are their associated catamorphism *)
-(* (Using big PL words actually makes your code go faster) *)
-val Nil = `(fn g => `(fn z => z))
-val Cons = `(fn x => `(fn xs => `(fn g => `(fn z => g $ x $ (xs $ g $ z)))))
-val isNil = `(fn xs => xs $ `(fn _ => `(fn _ => ff)) $ tt)
-val hd = `(fn xs => xs $ `(fn y => `(fn _ => y)) $ ff)
-val tl = `(fn l => `(fn c => `(fn n => l $ `(fn h => `(fn t => `(fn g => g $ h $ (t $ c)))) $ `(fn t => n) $ `(fn h => `(fn t => t)))))
-val matchList = `(fn p => `(fn xs => `(fn nil' => `(fn cons' => (p $ xs) $ `(fn _ => nil') $ `(fn _ => cons' $ (hd $ xs) $ (tl $ xs))))))
-val ifNil = matchList $ isNil
-val ::: = fn (x,y) => Cons $ x $ y
-infixr :::
-
-val to_church_list = foldr op::: Nil
-
-val to_church_int = fn n => if n < 0 then (zero) & (%(~n)) else (%n) & (zero)
-val lte_int = `(fn n => `(fn m => lte $ (add $ (fst $ n) $ (snd $ m)) $ (add $ (fst $ m) $ (snd $ n))))
+val to_church_int = fn n => if n < 0 then (`(fn x => `(fn y => `(fn f => f $ x $ y)))) $ ((`(fn f => `(fn x => x)))) $ (%(~n)) else (`(fn x => `(fn y => `(fn f => f $ x $ y)))) $ (%n) $ ((`(fn f => `(fn x => x))))
 
 
 (*
@@ -71,7 +34,8 @@ val lte_int = `(fn n => `(fn m => lte $ (add $ (fst $ n) $ (snd $ m)) $ (add $ (
  * turn even "recursive" (I don't see a val rec, do you?) functions into expressions.
  *)
 
-val mergesort = `(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn mergesort => `(fn lt => `(fn xs => (ifNil $ xs) $ Nil $ `(fn x => `(fn xs' => (ifNil $ xs') $ (x:::Nil) $ `(fn y => `(fn ys => let val p = (`(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn split => `(fn xs => (ifNil $ xs) $ (Nil & Nil) $ `(fn y => `(fn ys => (ifNil $ ys) $ ((y:::Nil) & Nil) $ `(fn z => `(fn zs => let val p = split $ zs in (y:::(fst $ p)) & (z:::(snd $ p)) end))))))) $ xs in (`(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn merge => `(fn lt => `(fn xs => `(fn ys => (ifNil $ xs) $ ys $ `(fn x => `(fn xs' => (ifNil $ ys) $ xs $ `(fn y => `(fn ys' => (lt $ x $ y) $ `(fn _ => x:::(merge $ lt $ xs' $ ys)) $ `(fn _ => y:::(merge $ lt $ xs $ ys')) ))))))))) $ lt $ (mergesort $ lt $ (fst $ p)) $ (mergesort $ lt $ (snd $ p)) end )))))))
+val mergesort = `(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn mergesort => `(fn lt => `(fn xs => ((`(fn xs => `(fn nil' => `(fn cons' => ((`(fn xs => xs $ `(fn _ => `(fn _ => (`(fn x => `(fn y => y $ id))))) $ (`(fn x => `(fn y => x $ id))))) $ xs) $ `(fn _ => nil') $ `(fn _ => cons' $ ((`(fn xs => xs $ `(fn y => `(fn _ => y)) $ (`(fn x => `(fn y => y $ id))))) $ xs) $ ((`(fn l => `(fn c => `(fn n => l $ `(fn h => `(fn t => `(fn g => g $ h $ (t $ c)))) $ `(fn t => n) $ `(fn h => `(fn t => t)))))) $ xs)))))) $ xs) $ (`(fn g => `(fn z => z))) $ `(fn x => `(fn xs' => ((`(fn xs => `(fn nil' => `(fn cons' => ((`(fn xs => xs $ `(fn _ => `(fn _ => (`(fn x => `(fn y => y $ id))))) $ (`(fn x => `(fn y => x $ id))))) $ xs) $ `(fn _ => nil') $ `(fn _ => cons' $ ((`(fn xs => xs $ `(fn y => `(fn _ => y)) $ (`(fn x => `(fn y => y $ id))))) $ xs) $ ((`(fn l => `(fn c => `(fn n => l $ `(fn h => `(fn t => `(fn g => g $ h $ (t $ c)))) $ `(fn t => n) $ `(fn h => `(fn t => t)))))) $ xs)))))) $ xs') $ ((`(fn x => `(fn xs => `(fn g => `(fn z => g $ x $ (xs $ g $ z)))))) $ x $ (`(fn g => `(fn z => z)))) $ `(fn y => `(fn ys => let val p = (`(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn split => `(fn xs => ((`(fn xs => `(fn nil' => `(fn cons' => ((`(fn xs => xs $ `(fn _ => `(fn _ => (`(fn x => `(fn y => y $ id))))) $ (`(fn x => `(fn y => x $ id))))) $ xs) $ `(fn _ => nil') $ `(fn _ => cons' $ ((`(fn xs => xs $ `(fn y => `(fn _ => y)) $ (`(fn x => `(fn y => y $ id))))) $ xs) $ ((`(fn l => `(fn c => `(fn n => l $ `(fn h => `(fn t => `(fn g => g $ h $ (t $ c)))) $ `(fn t => n) $ `(fn h => `(fn t => t)))))) $ xs)))))) $ xs) $ ((`(fn x => `(fn y => `(fn f => f $ x $ y)))) $ (`(fn g => `(fn z => z))) $ (`(fn g => `(fn z => z)))) $ `(fn y => `(fn ys => ((`(fn xs => `(fn nil' => `(fn cons' => ((`(fn xs => xs $ `(fn _ => `(fn _ => (`(fn x => `(fn y => y $ id))))) $ (`(fn x => `(fn y => x $ id))))) $ xs) $ `(fn _ => nil') $ `(fn _ => cons' $ ((`(fn xs => xs $ `(fn y => `(fn _ => y)) $ (`(fn x => `(fn y => y $ id))))) $ xs) $ ((`(fn l => `(fn c => `(fn n => l $ `(fn h => `(fn t => `(fn g => g $ h $ (t $ c)))) $ `(fn t => n) $ `(fn h => `(fn t => t)))))) $ xs)))))) $ ys) $ ((`(fn x => `(fn y => `(fn f => f $ x $ y)))) $ ((`(fn x => `(fn xs => `(fn g => `(fn z => g $ x $ (xs $ g $ z)))))) $ y $ (`(fn g => `(fn z => z)))) $ (`(fn g => `(fn z => z)))) $ `(fn z => `(fn zs => let val p = split $ zs in (`(fn x => `(fn y => `(fn f => f $ x $ y)))) $ ((`(fn x => `(fn xs => `(fn g => `(fn z => g $ x $ (xs $ g $ z)))))) $ y $ ((`(fn p => p $ `(fn x => `(fn _ => x)))) $ p)) $ ((`(fn x => `(fn xs => `(fn g => `(fn z => g $ x $ (xs $ g $ z)))))) $ z $ ((`(fn p => p $ `(fn _ => `(fn x => x)))) $ p)) end))))))) $ xs in (`(fn f => `(fn x => x $ x) $ `(fn x => `(fn y => f $ (x $ x) $ y))) $ `(fn merge => `(fn lt => `(fn xs => `(fn ys => ((`(fn xs => `(fn nil' => `(fn cons' => ((`(fn xs => xs $ `(fn _ => `(fn _ => (`(fn x => `(fn y => y $ id))))) $ (`(fn x => `(fn y => x $ id))))) $ xs) $ `(fn _ => nil') $ `(fn _ => cons' $ ((`(fn xs => xs $ `(fn y => `(fn _ => y)) $ (`(fn x => `(fn y => y $ id))))) $ xs) $ ((`(fn l => `(fn c => `(fn n => l $ `(fn h => `(fn t => `(fn g => g $ h $ (t $ c)))) $ `(fn t => n) $ `(fn h => `(fn t => t)))))) $ xs)))))) $ xs) $ ys $ `(fn x => `(fn xs' => ((`(fn xs => `(fn nil' => `(fn cons' => ((`(fn xs => xs $ `(fn _ => `(fn _ => (`(fn x => `(fn y => y $ id))))) $ (`(fn x => `(fn y => x $ id))))) $ xs) $ `(fn _ => nil') $ `(fn _ => cons' $ ((`(fn xs => xs $ `(fn y => `(fn _ => y)) $ (`(fn x => `(fn y => y $ id))))) $ xs) $ ((`(fn l => `(fn c => `(fn n => l $ `(fn h => `(fn t => `(fn g => g $ h $ (t $ c)))) $ `(fn t => n) $ `(fn h => `(fn t => t)))))) $ xs)))))) $ ys) $ xs $ `(fn y => `(fn ys' => (lt $ x $ y) $ `(fn _ => (`(fn x => `(fn xs => `(fn g => `(fn z => g $ x $ (xs $ g $ z)))))) $ x $ (merge $ lt $ xs' $ ys)) $ `(fn _ => (`(fn x => `(fn xs => `(fn g => `(fn z => g $ x $ (xs $ g $ z)))))) $ y $ (merge $ lt $ xs $ ys')) ))))))))) $ lt $ (mergesort $ lt $ ((`(fn p => p $ `(fn x => `(fn _ => x)))) $ p)) $ (mergesort $ lt $ ((`(fn p => p $ `(fn _ => `(fn x => x)))) $ p)) end ))))))) $ (`(fn n => `(fn m => (`(fn n => `(fn m => (`(fn n => n $ `(fn x => (`(fn x => `(fn y => y $ id)))) $ (`(fn x => `(fn y => x $ id))))) $ ((`(fn n => `(fn m => (m $ (`(fn n => (`(fn p => p $ `(fn x => `(fn _ => x)))) $  (n $ `(fn p => (`(fn x => `(fn y => `(fn f => f $ x $ y)))) $ ((`(fn p => p $ `(fn _ => `(fn x => x)))) $ p) $   ((`(fn n => `(fn f => `(fn x => f $ (n $ f $ x))))) $ ((`(fn p => p $ `(fn _ => `(fn x => x)))) $ p))) $ ((`(fn x => `(fn y => `(fn f => f $ x $ y)))) $ (`(fn f => `(fn x => x))) $ (`(fn f => `(fn x =>     x)))))))) $ n))) $ n $ m)))) $ ((`(fn n => `(fn m => `(fn f => `(fn x => (n $ f) $ (m $ f $ x)))))) $ ((`(fn p => p $ `(fn x => `(fn _ => x)))) $ n) $ ((`(fn p => p $ `(fn _ => `(fn x => x)))) $ m)) $ ((`(fn n => `(fn m => `(fn f => `(fn x => (n $ f) $ (m $ f $ x)))))) $ ((`(fn p => p $ `(fn x => `(fn _ => x)))) $ m) $ ((`(fn p => p $ `(fn _ => `(fn x => x)))) $ n))))
+)
 
 
 (*
@@ -91,7 +55,7 @@ val `? = fn x => `(?x)
 
 (*
  * If you're already familiar with church encodings, then perhaps you've been
- * bored up till now. Here's the real magic.
+ * bored so far. Here's the real magic.
  * Notice: the lambda terms we get from encoding integers and lists
  * have baaaaaaasically the same structure as the equivalent System F encodings.
  * They just lack the relevant type.
@@ -106,7 +70,7 @@ val typify_list : M -> ('a -> 'b -> 'b) -> 'b -> 'b =
 
 val from_church_nat = fn n => typify_nat n (Fn.curry op+ 1) 0
 
-val from_church_int = fn n => from_church_nat (fst $ n) - from_church_nat (snd $ n)
+val from_church_int = fn n => from_church_nat ((`(fn p => p $ `(fn x => `(fn _ => x)))) $ n) - from_church_nat ((`(fn p => p $ `(fn _ => `(fn x => x)))) $ n)
 
 val from_church_int_list = fn xs => typify_list xs (fn x => fn xs => from_church_int x::xs) []
 
@@ -118,7 +82,7 @@ infix >>>
 val sort =
   map ((fn x => x*10.0) >>> Real.toInt IEEEReal.TO_NEAREST >>> to_church_int) >>>
   to_church_list >>>
-  !(mergesort $ lte_int) >>>
+  !mergesort >>>
   from_church_int_list >>>
   map (Real.fromInt >>> (fn x => x / 10.0) >>> Real.toString)
 
