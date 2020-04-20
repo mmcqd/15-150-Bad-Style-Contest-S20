@@ -64,6 +64,15 @@ val ? = Don'tTryThisAtHomeKids.cast
 val ?! = fn x => ?(!x)
 val `? = fn x => `(?x)
 
+(* Why should function application/composition only go in one, consistent direction? *)
+fun --> (x,f) = f x
+fun ==> (f,g) = g o f
+fun <-- (f,x) = f x
+fun <== (f,g) = f o g
+infixr <-- ==>
+infix 1 --> <==
+
+
 (*
  * If you're already familiar with church encodings, then perhaps you've been
  * bored so far. Here's the fun part.
@@ -72,26 +81,20 @@ val `? = fn x => `(?x)
  * They just lack the relevant type.
  * Maybe if we ask the state of New Jersey really nicely, we can convince the
  * compiler to shove some types back in there...
- * (I've obfuscated these as much as possible for maximum *bad style*, see explanation at the end)
+ * (I've obfuscated these for maximum *bad style*, see explanation at the end)
  *)
 val typify_nat : M -> ('a -> 'a) -> 'a -> 'a =
-  fn m => fn f => ?! o (!(!m(`?(`? o f o ?!)))) o `?
+  fn m => fn f => `? ==> ?! <== !(!m(`?(?! ==> `? <== f)))
+
 
 val typify_list : M -> (M -> 'b -> 'b) -> 'b -> 'b =
-  fn m => fn g => ?! o (!(!m(`?(fn y=> `?(`? o (g y) o ?!))))) o `?
+  fn m => fn g => `? ==> ?! <== !(!m(`?(fn y=> `?(?! ==> `? <== g y))))
 
 val from_church_nat = fn n => typify_nat n (curry op+ 1) 0
 
 val from_church_int = fn n => from_church_nat ((`(fn p => p $ `(fn x => `(fn _ => x)))) $ n) - from_church_nat ((`(fn p => p $ `(fn _ => `(fn x => x)))) $ n)
 
 val from_church_int_list = fn xs => typify_list xs (fn x => fn xs => from_church_int x::xs) []
-
-
-(* Why should function application only go in one, consistent direction? *)
-fun --> (x,f) = f x
-fun <-- (f,x) = f x
-infixr <--
-infix 1 -->
 
 
 val sort = fn x =>
@@ -115,7 +118,7 @@ plain SML values into lambda terms, which allows us to use actual lambda terms a
 vehicles for function application, and then extract the result at the end. The first step
 to solving this is being able to turn arbitrary SML values into lambda terms.
 *)
-val into0 : 'a -> M = fn x => `(? x)
+val into0 = fn x => `(? x)
 (*
 Notice that into0 == `?. It Unsafe.casts a value to have type M -> M, and then applies `,
 which is an alias for the Term constructor (which is hidden by the long since deprecated
