@@ -1,3 +1,6 @@
+(*                      Scroll so the left of the window is
+                        here
+*)
 (*                      {-# LANGUAGE LongArrows, DataTypeDec #-}
 *)
 (*                      --People like to argue whether cons ought to be (:) or (::)
